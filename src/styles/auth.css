@@ -1,0 +1,51 @@
+/* Login screen: card, fields, validation and the theme toggle. */
+
+.auth-container { justify-content: center; align-items: center; position: relative; overflow: hidden; padding: 24px; }
+
+/* Ambient wash behind the card so it reads as a surface, not floating text */
+.auth-glow { position: absolute; top: -22%; left: 50%; transform: translateX(-50%); width: 640px; height: 640px; border-radius: 50%; background: radial-gradient(circle, var(--auth-glow) 0%, transparent 70%); pointer-events: none; }
+
+.auth-theme-toggle { position: absolute; top: 20px; right: 20px; display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-secondary); cursor: pointer; transition: color 0.2s, border-color 0.2s; }
+.auth-theme-toggle:hover { color: var(--text-primary); border-color: var(--border-hover); }
+
+.auth-box { position: relative; width: 100%; max-width: 384px; padding: 36px 32px 26px; background: var(--bg-sidebar); border: 1px solid var(--border-color); border-radius: 16px; box-shadow: var(--auth-card-shadow); }
+
+.auth-header { text-align: center; margin-bottom: 24px; }
+.auth-logo { display: inline-flex; align-items: center; justify-content: center; width: 46px; height: 46px; margin-bottom: 14px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); }
+.auth-header h2 { font-size: 22px; font-weight: 600; margin-bottom: 6px; letter-spacing: -0.01em; }
+.auth-header p { color: var(--text-secondary); font-size: 13.5px; line-height: 1.5; }
+
+.auth-form { display: flex; flex-direction: column; gap: 14px; }
+.input-group { display: flex; flex-direction: column; gap: 7px; }
+.input-group label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+
+.field { position: relative; display: flex; align-items: center; }
+.field-icon { position: absolute; left: 12px; color: var(--text-secondary); pointer-events: none; }
+.field input { width: 100%; padding: 12px 12px 12px 38px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary); font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+.field input::placeholder { color: var(--text-secondary); opacity: 0.7; }
+.field input:hover:not(:disabled) { border-color: var(--border-hover); }
+.field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus-ring); }
+.field input[aria-invalid="true"] { border-color: var(--danger); }
+.field input:disabled { opacity: 0.6; cursor: not-allowed; }
+.field:has(.field-action) input { padding-right: 42px; }
+
+.field-action { position: absolute; right: 6px; display: flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: none; border-radius: 6px; background: transparent; color: var(--text-secondary); cursor: pointer; transition: color 0.2s, background 0.2s; }
+.field-action:hover { color: var(--text-primary); background: var(--btn-hover); }
+
+.auth-error-slot { min-height: 17px; margin-top: -5px; }
+.auth-error { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--danger); }
+
+.btn-primary { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: 8px; border: none; background: var(--text-primary); color: var(--bg-main); font-weight: 600; font-size: 14px; font-family: inherit; cursor: pointer; transition: opacity 0.2s, transform 0.1s; }
+.btn-primary:hover:not(:disabled) { opacity: 0.9; }
+.btn-primary:active:not(:disabled) { transform: scale(0.99); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.auth-footer { margin-top: 18px; text-align: center; font-size: 12px; line-height: 1.5; color: var(--text-secondary); }
+
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 480px) {
+  .auth-box { padding: 28px 22px 22px; border-radius: 14px; }
+  .auth-theme-toggle { top: 14px; right: 14px; }
+}

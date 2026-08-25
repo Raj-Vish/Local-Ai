@@ -1,0 +1,48 @@
+/* Reset, theme tokens and the app shell.
+   Every other stylesheet depends on the custom properties declared here. */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body, html { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+
+.theme-light {
+  --bg-main: #ffffff;
+  --bg-sidebar: #f9f9f9;
+  --bg-input: #ffffff;
+  --text-primary: #0d0d0d;
+  --text-secondary: #666666;
+  --border-color: #e5e5e5;
+  --border-hover: #d1d1d1;
+  --msg-user-bg: #f4f4f4;
+  --msg-user-text: #0d0d0d;
+  --msg-ai-text: #0d0d0d;
+  --accent: #1a1a1a;
+  --btn-hover: #ececec;
+  --popover-bg: #ffffff;
+  --popover-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  --danger: #c0392b;
+  --focus-ring: rgba(13,13,13,0.10);
+  --auth-glow: rgba(0,0,0,0.05);
+  --auth-card-shadow: 0 12px 40px rgba(0,0,0,0.08);
+}
+.theme-dark {
+  --bg-main: #212121;
+  --bg-sidebar: #171717;
+  --bg-input: #2f2f2f;
+  --text-primary: #ececec;
+  --text-secondary: #9e9e9e;
+  --border-color: #383838;
+  --border-hover: #505050;
+  --msg-user-bg: #2f2f2f;
+  --msg-user-text: #ececec;
+  --msg-ai-text: #ececec;
+  --accent: #ececec;
+  --btn-hover: #2f2f2f;
+  --popover-bg: #2f2f2f;
+  --popover-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  --danger: #f87171;
+  --focus-ring: rgba(236,236,236,0.14);
+  --auth-glow: rgba(255,255,255,0.05);
+  --auth-card-shadow: 0 12px 40px rgba(0,0,0,0.35);
+}
+
+.app-root { background-color: var(--bg-main); color: var(--text-primary); height: 100vh; width: 100vw; display: flex; transition: background-color 0.2s, color 0.2s; }

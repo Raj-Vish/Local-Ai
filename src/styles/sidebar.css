@@ -1,0 +1,27 @@
+/* Sidebar: profile, new chat, thread history and footer actions. */
+
+.sidebar { width: 260px; background-color: var(--bg-sidebar); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; flex-shrink: 0; }
+.sidebar-header { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
+.profile-group { display: flex; align-items: center; gap: 10px; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background-color: var(--text-primary); color: var(--bg-main); display: flex; align-items: center; justify-content: center; }
+.profile-info { display: flex; flex-direction: column; }
+.profile-name { font-size: 13px; font-weight: 600; }
+.profile-role { font-size: 11px; color: var(--text-secondary); }
+
+.sidebar-scrollable { flex: 1; overflow-y: auto; padding: 16px; }
+.new-chat-btn { display: flex; align-items: center; gap: 8px; width: 100%; background: transparent; border: 1px solid var(--border-color); padding: 10px 12px; border-radius: 8px; color: var(--text-primary); font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+.new-chat-btn:hover { background: var(--btn-hover); }
+
+.history-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); margin: 8px 0 8px 4px; }
+.history-list { display: flex; flex-direction: column; gap: 2px; }
+.history-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; border: none; background: transparent; color: var(--text-primary); font-size: 13px; border-radius: 6px; cursor: pointer; text-align: left; }
+.history-item:hover { background: var(--btn-hover); }
+.history-item.active { background: var(--btn-hover); font-weight: 500; }
+.history-item.active::before { content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: 16px; border-radius: 0 2px 2px 0; background: var(--text-primary); }
+.history-item { position: relative; }
+.history-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.sidebar-footer { padding: 12px 16px; display: flex; flex-direction: column; gap: 4px; }
+.footer-btn { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: none; background: transparent; color: var(--text-primary); font-size: 13px; border-radius: 6px; cursor: pointer; }
+.footer-btn:hover { background: var(--btn-hover); }
+.footer-btn.danger { color: #ef4444; }
