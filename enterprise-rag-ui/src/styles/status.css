@@ -1,0 +1,23 @@
+/* Connection indicator. Deliberately quiet: it should be findable when
+   something is wrong and ignorable when everything works. */
+
+.backend-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+  font-size: 11.5px;
+  line-height: 1;
+  color: var(--text-secondary);
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.backend-status.ok { color: #2f855a; border-color: rgba(47, 133, 90, 0.35); }
+.backend-status.warn { color: #b7791f; border-color: rgba(183, 121, 31, 0.35); }
+.backend-status.bad { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 35%, transparent); }
+
+.theme-dark .backend-status.ok { color: #68d391; }
+.theme-dark .backend-status.warn { color: #f6c177; }

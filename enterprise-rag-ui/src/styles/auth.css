@@ -49,3 +49,5 @@
   .auth-box { padding: 28px 22px 22px; border-radius: 14px; }
   .auth-theme-toggle { top: 14px; right: 14px; }
 }
+
+.auth-status { display: flex; justify-content: center; margin-top: 14px; }
