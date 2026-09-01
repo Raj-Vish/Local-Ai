@@ -28,10 +28,6 @@ Software is built mostly from borrowed pieces. That is normal, and it is how eve
 
 **The problem it solves.** Without React, if you wanted to add one new message to a chat, you would have to write step-by-step instructions by hand: *"find the message list, create a new bubble, put the text inside, colour it, attach it at the bottom, scroll down."* For every single change. It becomes an unmanageable mess very quickly.
 
-React flips this around. You describe **what the screen should look like** for any given situation — *"a list of messages, one bubble each"* — and React works out the steps to get there. You change the list; the screen follows automatically.
-
-**Why we chose it:** It is the most widely used tool of its kind in the world. That means the most tutorials, the most answered questions online, and by far the easiest hiring pool. For a company project that other people must maintain later, that matters more than raw cleverness.
-
 ---
 
 ### 2. Vite — version 8.2
@@ -54,9 +50,7 @@ React flips this around. You describe **what the screen should look like** for a
 
 **What it is:** A collection of well over a thousand ready-made icons — the paperclip, the send arrow, the sun and moon, the trash can, the eye that shows and hides a password.
 
-**Why we chose it:** Drawing consistent icons by hand is slow, and mismatched icons make an app look amateurish instantly. These are clean, professional, free to use commercially, and importantly they **adapt to their surroundings** — an icon automatically turns light in dark mode and dark in light mode, without anyone doing anything.
 
-Also, only the icons we actually use get included in the final app. The rest are left behind and cost us nothing.
 
 ---
 
@@ -66,9 +60,6 @@ Also, only the icons we actually use get included in the final app. The rest are
 
 **What we did:** Wrote it ourselves, split into five small files that match the screens: `base.css`, `auth.css`, `sidebar.css`, `chat.css`, `settings.css`. Find the sidebar looking wrong? Open `sidebar.css`. That is the entire filing system.
 
-**Why we did not use a framework** (such as Tailwind or Bootstrap, which many projects use): Those add a large extra thing for every developer to learn, and this app is not complicated enough to need it. Seven small components, one consistent style. Plain CSS keeps the project small and means anyone who knows basic web design can contribute without learning our specific tooling first.
-
-The dark/light theme is handled by a built-in CSS feature called **custom properties** — the colour "nicknames" explained in `README.md` section 5. No library needed for it at all.
 
 ---
 
@@ -86,46 +77,10 @@ The dark/light theme is handled by a built-in CSS feature called **custom proper
 
 Everything here is free and open-source. This is copied from `package.json`, the project's official ingredient list.
 
-**Needed to run the app:**
 
-| Package | Version | What it does |
-|---|---|---|
-| `react` | 19.2.8 | Draws and updates the screen |
-| `react-dom` | 19.2.8 | Connects React to the web browser specifically |
-| `lucide-react` | 1.33.0 | The icons |
-
-**Needed only while building — not shipped to users:**
-
-| Package | Version | What it does |
-|---|---|---|
-| `vite` | 8.2.0 | The workshop / build tool |
-| `@vitejs/plugin-react` | 6.0.4 | Teaches Vite to understand React |
-| `eslint` | 10.8.0 | The proofreader |
-| `@eslint/js` | 10.0.1 | The proofreader's standard rulebook |
-| `eslint-plugin-react-hooks` | 7.1.1 | Extra rules for React's trickiest feature |
-| `eslint-plugin-react-refresh` | 0.5.3 | Protects the instant-refresh feature |
-| `globals` | 17.7.0 | Tells the proofreader which browser words are legitimate |
-| `@types/react` | 19.2.17 | Helps the code editor autocomplete React |
-| `@types/react-dom` | 19.2.3 | Same, for react-dom |
-
-**That's it — 12 packages total.** For comparison, many projects of this size carry 50 or more. Fewer packages means faster installs, fewer security alerts, and less that can break.
 
 ---
 
-## What we deliberately did NOT use
-
-Choosing to leave something out is a real decision. Here is what we skipped and why — this is worth reading, because a newcomer might otherwise assume it was an oversight.
-
-| Not used | What it would have added | Why we skipped it |
-|---|---|---|
-| **TypeScript** | Catches a whole category of mistake before you run the app | Real benefit, but a real learning curve too. At this size, plain JavaScript keeps the project open to more people. Worth revisiting if it grows. |
-| **A router** | Proper web addresses like `/chat` and `/settings` | There are only two screens: logged out and logged in. A single yes/no check does the job. Adding a router would be more machinery than the problem deserves. |
-| **Redux / Zustand** (state managers) | Sophisticated memory management for large apps | Designed for apps where dozens of pieces need the same information. Ours has one boss and short chains. React's built-in memory is enough. |
-| **Tailwind / Bootstrap** (CSS frameworks) | Faster styling, once learned | An extra language to learn for an app this small, with one consistent look throughout. |
-| **A test framework** | Automated checks that features still work | Honest answer: not set up yet. Fine while the app is all mock data; it should be added before the real AI is connected. |
-| **A backend framework** | The actual server and AI | Deliberately postponed. Screens first, kitchen second — see `README.md` section 2. |
-
----
 
 # PART 2 — Setting this up on another computer
 
@@ -195,12 +150,6 @@ npm install
 
 **What this does:** reads `package.json`, sees the 12 packages listed there, and downloads them — plus everything *they* depend on — into a new folder called `node_modules`.
 
-**What to expect:** one to three minutes, lots of scrolling text, and a `node_modules` folder that ends up surprisingly large (a few hundred megabytes). This is completely normal and not a mistake.
-
-> **Tip for exact reproduction:** if you want the *identical* package versions this project was built with, run **`npm ci`** instead of `npm install`. It reads `package-lock.json`, a file that records the exact version of every single package down to the last decimal point. `npm install` may pick up newer compatible versions; `npm ci` never does. Use `npm ci` when you want certainty, `npm install` when adding something new.
-
-> **Note:** `node_modules` is intentionally **not** stored on GitHub — it is far too large and can always be rebuilt from `package.json`. That is why this step is necessary and cannot be skipped.
-
 ---
 
 ## Step 5 — Run it
@@ -228,13 +177,6 @@ Sign in with any email that looks like an email and any password of 4 or more ch
 
 ---
 
-## Step 6 — Try the instant refresh
-
-With the app running, open `src/data/mockData.js` in any text editor, change some of the wording, and save.
-
-Look at your browser — it has already updated. You did not refresh, and you were not logged out. This is Vite's headline feature and it is what makes day-to-day work fast.
-
----
 
 ## All the commands
 
@@ -278,20 +220,6 @@ On Windows, delete the `node_modules` folder and `package-lock.json` by hand, th
 ### Nothing updates when I save a file
 Make sure `npm run dev` is still running and has not crashed — check the terminal for red error text. If it is running fine, refresh the browser once. If it still misbehaves, stop with `Ctrl + C` and start it again.
 
-### Everything looks unstyled and broken
-Usually a mistake in a `.css` file. The terminal running `npm run dev` will name the file and line number.
-
----
-
-## Wanting to show it to someone else
-
-```bash
-npm run dev -- --host
-```
-
-This prints a second address (something like `http://192.168.1.7:5173/`) that anyone **on the same Wi-Fi network** can open on their phone or laptop. Handy for demos and for checking the app on a real phone screen.
-
-This is for local demos only. It is not a way to publish the app on the internet.
 
 ---
 
