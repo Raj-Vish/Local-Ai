@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, Sparkles, LoaderCircle, AlertCircle, Sun, Moon } from "lucide-react";
+import BackendStatus from "./BackendStatus";
 import "../styles/auth.css";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -136,8 +137,12 @@ export default function LoginView({ activeTheme, onToggleTheme, onAuthenticated 
         </form>
 
         <p className="auth-footer">
-          You will only see resources indexed for your department.
+          You will only see expenses and documents you uploaded yourself.
         </p>
+
+        <div className="auth-status">
+          <BackendStatus />
+        </div>
       </div>
     </>
   );
