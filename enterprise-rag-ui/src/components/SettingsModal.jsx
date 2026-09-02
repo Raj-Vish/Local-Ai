@@ -53,8 +53,8 @@ export default function SettingsModal({
                 <User size={16} />
               </div>
               <div className="account-info">
-                <span className="account-name">{user?.name}</span>
-                <span className="account-meta">{user?.email} &middot; {user?.role}</span>
+                <span className="account-name">{user?.full_name}</span>
+                <span className="account-meta">{user?.email} &middot; {user?.employee_id}</span>
               </div>
             </div>
           </div>

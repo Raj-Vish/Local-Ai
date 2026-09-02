@@ -42,7 +42,7 @@ export default function ChatView({
       <div className="messages-container">
         <div className="messages-content">
           {messages.length === 0 ? (
-            <EmptyState role={user?.role} onPickPrompt={pickPrompt} />
+            <EmptyState firstName={user?.full_name?.split(" ")[0]} onPickPrompt={pickPrompt} />
           ) : (
             messages.map((msg, index) => (
               <ChatMessage

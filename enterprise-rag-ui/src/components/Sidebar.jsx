@@ -32,8 +32,8 @@ export default function Sidebar({
             <User size={16} />
           </div>
           <div className="profile-info">
-            <span className="profile-name" style={{ textTransform: "capitalize" }}>{user?.name}</span>
-            <span className="profile-role">{user?.role}</span>
+            <span className="profile-name">{user?.full_name}</span>
+            <span className="profile-role">{user?.employee_id}</span>
           </div>
         </div>
         <button className="icon-btn" onClick={onClose} title="Close sidebar" aria-label="Close sidebar">
