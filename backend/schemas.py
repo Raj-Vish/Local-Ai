@@ -4,7 +4,7 @@ Pydantic checks incoming data before a route ever runs, so a route can trust
 what it is given. Anything that fails these rules gets a 422 with a message
 naming the field, without a line of validation code in the route itself.
 """
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
@@ -61,3 +61,20 @@ class TokenOut(BaseModel):
     token_type: str = "bearer"
     expires_in_minutes: int
     user: UserOut
+
+
+class DocumentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    document_id: int
+    original_filename: str
+    mime_type: str
+    file_size: int
+    status: str
+    ocr_used: bool
+    uploaded_at: datetime
+
+
+class DocumentList(BaseModel):
+    items: list[DocumentOut]
+    count: int
