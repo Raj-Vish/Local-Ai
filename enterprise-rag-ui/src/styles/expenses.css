@@ -1,0 +1,65 @@
+/* Expenses screen. Builds on the shared page shell in documents.css. */
+
+.filter-bar { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.filter { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--text-secondary); }
+.filter span { font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.filter input, .filter select {
+  padding: 7px 10px; border-radius: 8px; font-size: 13px; font-family: inherit;
+  border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-primary);
+}
+.filter input:focus, .filter select:focus { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.push-right { margin-left: auto; }
+
+.btn-primary.compact { width: auto; padding: 8px 14px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+
+/* Summary */
+.summary-card {
+  border: 1px solid var(--border-color); border-radius: 12px;
+  padding: 16px 18px; margin-bottom: 18px; background: var(--bg-sidebar);
+}
+.summary-main { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.summary-label { font-size: 12px; color: var(--text-secondary); }
+.summary-total { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.summary-count { font-size: 12px; color: var(--text-secondary); }
+.summary-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 13px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  padding: 4px 10px; border-radius: 999px; font-size: 12px; font-family: inherit;
+  border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-secondary);
+}
+.chip:hover { border-color: var(--border-hover); color: var(--text-primary); }
+.chip.active { border-color: var(--text-primary); color: var(--text-primary); }
+.chip strong { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+/* Form */
+.expense-form {
+  border: 1px solid var(--border-color); border-radius: 12px;
+  padding: 16px 18px; margin-bottom: 18px; background: var(--bg-input);
+}
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.field-label { display: flex; flex-direction: column; gap: 5px; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-secondary); }
+.field-label.wide { grid-column: span 2; }
+.field-label input, .field-label select {
+  padding: 8px 10px; border-radius: 8px; font-size: 13px; font-family: inherit; font-weight: 400;
+  letter-spacing: normal; text-transform: none;
+  border: 1px solid var(--border-color); background: var(--bg-main); color: var(--text-primary);
+}
+.field-label input:focus, .field-label select:focus { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+.optional { font-weight: 400; text-transform: none; letter-spacing: normal; opacity: 0.7; }
+.form-problem { color: var(--danger); font-size: 12.5px; margin: 10px 0 0; }
+.form-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+.form-actions .btn-secondary { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Table extras */
+.data-table tr.editing td { padding: 0; background: var(--bg-sidebar); }
+.data-table tr.editing .expense-form { margin: 0; border: 0; border-radius: 0; }
+.nowrap { white-space: nowrap; }
+.money { font-weight: 550; }
+.cell-note { display: block; font-size: 11.5px; color: var(--text-secondary); margin-top: 2px; }
+.muted-icon { color: var(--text-secondary); flex-shrink: 0; }
+
+@media (max-width: 620px) {
+  .field-label.wide { grid-column: span 1; }
+  .push-right { margin-left: 0; }
+}
