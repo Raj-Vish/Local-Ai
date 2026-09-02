@@ -1,4 +1,4 @@
-import { User, Settings, LogOut, Plus, MessageSquare, PanelLeftClose } from "lucide-react";
+import { User, Settings, LogOut, Plus, MessageSquare, PanelLeftClose, FolderOpen } from "lucide-react";
 import "../styles/sidebar.css";
 
 function HistoryList({ topics, activeChat, keyPrefix, withIcon, onSelect }) {
@@ -20,9 +20,14 @@ function HistoryList({ topics, activeChat, keyPrefix, withIcon, onSelect }) {
   );
 }
 
+const NAV = [
+  { view: "chat", label: "Chat", Icon: MessageSquare },
+  { view: "documents", label: "Documents", Icon: FolderOpen }
+];
+
 export default function Sidebar({
-  user, recentChats, chatHistory, activeChat,
-  onClose, onNewChat, onSelectThread, onOpenSettings, onLogout
+  user, recentChats, chatHistory, activeChat, activeView,
+  onClose, onNavigate, onNewChat, onSelectThread, onOpenSettings, onLogout
 }) {
   return (
     <aside className="sidebar">
@@ -42,6 +47,22 @@ export default function Sidebar({
       </div>
 
       <div className="sidebar-scrollable">
+        <nav className="nav-list" aria-label="Sections">
+          {NAV.map(({ view, label, Icon }) => (
+            <button
+              key={view}
+              className={`nav-item ${activeView === view ? "active" : ""}`}
+              aria-current={activeView === view ? "page" : undefined}
+              onClick={() => onNavigate(view)}
+            >
+              <Icon size={15} />
+              {label}
+            </button>
+          ))}
+        </nav>
+
+        {activeView === "chat" && (
+          <>
         <button className="new-chat-btn" onClick={onNewChat}>
           <Plus size={16} /> New Chat
         </button>
@@ -68,6 +89,8 @@ export default function Sidebar({
           keyPrefix="old"
           onSelect={(topic) => onSelectThread(topic, false)}
         />
+          </>
+        )}
       </div>
 
       <div className="sidebar-footer">

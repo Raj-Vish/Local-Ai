@@ -25,3 +25,13 @@
 .footer-btn { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: none; background: transparent; color: var(--text-primary); font-size: 13px; border-radius: 6px; cursor: pointer; }
 .footer-btn:hover { background: var(--btn-hover); }
 .footer-btn.danger { color: #ef4444; }
+
+.nav-list { display: flex; flex-direction: column; gap: 2px; margin-bottom: 16px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 8px; border: 0; cursor: pointer;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13.5px; font-family: inherit; text-align: left; width: 100%;
+}
+.nav-item:hover { background: var(--btn-hover); color: var(--text-primary); }
+.nav-item.active { background: var(--btn-hover); color: var(--text-primary); font-weight: 500; }

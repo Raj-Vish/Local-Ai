@@ -4,6 +4,7 @@ import LoginView from "./components/LoginView";
 import Sidebar from "./components/Sidebar";
 import ChatView from "./components/ChatView";
 import SettingsModal from "./components/SettingsModal";
+import DocumentsPage from "./pages/DocumentsPage";
 import SessionLoader from "./components/SessionLoader";
 import { useTheme } from "./hooks/useTheme";
 import { useChatSession } from "./hooks/useChatSession";
@@ -19,6 +20,7 @@ export default function App() {
     loadStoredToken() ? "restoring" : "signed-out"
   );
   const [expiredNotice, setExpiredNotice] = useState(false);
+  const [activeView, setActiveView] = useState("chat");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [memoryEnabled, setMemoryEnabled] = useState(true);
@@ -81,6 +83,12 @@ export default function App() {
     if (window.innerWidth < 768) setIsSidebarOpen(false);
   };
 
+  const handleNavigate = (view) => {
+    setActiveView(view);
+    // On a narrow screen the sidebar covers the page it just opened.
+    if (window.innerWidth < 768) setIsSidebarOpen(false);
+  };
+
   if (authState === "restoring") {
     return (
       <div className={`app-root theme-${activeTheme} auth-container`}>
@@ -107,6 +115,8 @@ export default function App() {
       {isSidebarOpen && (
         <Sidebar
           user={user}
+          activeView={activeView}
+          onNavigate={handleNavigate}
           recentChats={chat.recentChats}
           chatHistory={chat.chatHistory}
           activeChat={chat.activeChat}
@@ -118,22 +128,29 @@ export default function App() {
         />
       )}
 
-      <ChatView
-        user={user}
-        isSidebarOpen={isSidebarOpen}
-        onOpenSidebar={() => setIsSidebarOpen(true)}
-        messages={chat.messages}
-        isGenerating={chat.isGenerating}
-        inputValue={chat.inputValue}
-        onInputChange={chat.setInputValue}
-        onSend={chat.sendMessage}
-        onStop={chat.stopGenerating}
-        attachedFiles={chat.attachedFiles}
-        onAttachFile={chat.attachFile}
-        onRemoveFile={chat.removeFile}
-        messagesEndRef={chat.messagesEndRef}
-        textareaRef={chat.textareaRef}
-      />
+      {activeView === "documents" ? (
+        <DocumentsPage
+          isSidebarOpen={isSidebarOpen}
+          onOpenSidebar={() => setIsSidebarOpen(true)}
+        />
+      ) : (
+        <ChatView
+          user={user}
+          isSidebarOpen={isSidebarOpen}
+          onOpenSidebar={() => setIsSidebarOpen(true)}
+          messages={chat.messages}
+          isGenerating={chat.isGenerating}
+          inputValue={chat.inputValue}
+          onInputChange={chat.setInputValue}
+          onSend={chat.sendMessage}
+          onStop={chat.stopGenerating}
+          attachedFiles={chat.attachedFiles}
+          onAttachFile={chat.attachFile}
+          onRemoveFile={chat.removeFile}
+          messagesEndRef={chat.messagesEndRef}
+          textareaRef={chat.textareaRef}
+        />
+      )}
 
       {isSettingsOpen && (
         <SettingsModal
