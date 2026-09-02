@@ -4,20 +4,34 @@ Phase one: authentication, documents, expenses and reports. No AI yet —
 see the architecture blueprint for what plugs in later and where.
 """
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
+import models  # noqa: F401  -- imported so Base knows about every table
 from config import settings
-from database import engine
+from database import Base, engine
 
 log = logging.getLogger("uvicorn.error")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Creates any table that does not exist yet. It does NOT alter existing
+    # tables: change a column and nothing happens here, so during prototyping
+    # drop the table and let it rebuild. Alembic handles this properly once
+    # the schema stops moving.
+    Base.metadata.create_all(bind=engine)
+    log.info("tables ready: %s", ", ".join(sorted(Base.metadata.tables)))
+    yield
+
 
 app = FastAPI(
     title="Expense Management API",
     description="AI-Assisted Enterprise Expense Management System",
-    version="0.1.0",
+    version="0.2.0",
+    lifespan=lifespan,
 )
 
 # The browser blocks a response from a different origin unless the server
