@@ -147,20 +147,10 @@ export default function App() {
         />
       ) : (
         <ChatView
-          user={user}
           isSidebarOpen={isSidebarOpen}
           onOpenSidebar={() => setIsSidebarOpen(true)}
           messages={chat.messages}
-          isGenerating={chat.isGenerating}
-          inputValue={chat.inputValue}
-          onInputChange={chat.setInputValue}
-          onSend={chat.sendMessage}
-          onStop={chat.stopGenerating}
-          attachedFiles={chat.attachedFiles}
-          onAttachFile={chat.attachFile}
-          onRemoveFile={chat.removeFile}
           messagesEndRef={chat.messagesEndRef}
-          textareaRef={chat.textareaRef}
         />
       )}
 

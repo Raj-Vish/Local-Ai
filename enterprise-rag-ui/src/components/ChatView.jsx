@@ -1,33 +1,11 @@
-import { useState } from "react";
-import { PanelLeft } from "lucide-react";
+import { PanelLeft, Sparkles, Clock } from "lucide-react";
 import ChatMessage from "./ChatMessage";
-import EmptyState from "./EmptyState";
-import Composer from "./Composer";
-import { writeToClipboard } from "../lib/clipboard";
 import "../styles/chat.css";
 
-export default function ChatView({
-  user, isSidebarOpen, onOpenSidebar,
-  messages, isGenerating, inputValue, onInputChange, onSend, onStop,
-  attachedFiles, onAttachFile, onRemoveFile,
-  messagesEndRef, textareaRef
-}) {
-  const [copiedIndex, setCopiedIndex] = useState(null);
-
-  const handleCopy = async (text, index) => {
-    // Only confirm a copy that actually landed.
-    if (!(await writeToClipboard(text))) return;
-    setCopiedIndex(index);
-    setTimeout(() => setCopiedIndex(null), 1500);
-  };
-
-  const pickPrompt = (prompt) => {
-    onInputChange(prompt);
-    textareaRef.current?.focus();
-  };
-
-  const lastIndex = messages.length - 1;
-
+// The message list and bubbles are kept and working; the composer is not
+// rendered, because it replies with canned text and in a demo that reads as
+// a broken feature. The retrieval phase reconnects it to a real endpoint.
+export default function ChatView({ isSidebarOpen, onOpenSidebar, messages, messagesEndRef }) {
   return (
     <main className="chat-main">
       <header className="chat-header">
@@ -36,39 +14,34 @@ export default function ChatView({
             <PanelLeft size={20} />
           </button>
         )}
-        <span className="header-title">Company AI Assistant</span>
+        <span className="header-title">Assistant</span>
+        <span className="phase-badge">Next phase</span>
       </header>
 
       <div className="messages-container">
         <div className="messages-content">
           {messages.length === 0 ? (
-            <EmptyState firstName={user?.full_name?.split(" ")[0]} onPickPrompt={pickPrompt} />
+            <div className="phase-notice">
+              <div className="phase-icon" aria-hidden="true"><Sparkles size={22} /></div>
+              <h2>Not connected yet</h2>
+              <p>
+                This screen is built and waiting. Asking questions about your own
+                receipts needs the document-reading and retrieval work, which is
+                the next phase of the project.
+              </p>
+              <p className="phase-meanwhile">
+                <Clock size={13} />
+                Meanwhile, Documents, Expenses and Reports are fully working.
+              </p>
+            </div>
           ) : (
             messages.map((msg, index) => (
-              <ChatMessage
-                key={index}
-                message={msg}
-                isStreaming={isGenerating && index === lastIndex}
-                isCopied={copiedIndex === index}
-                onCopy={() => handleCopy(msg.content, index)}
-              />
+              <ChatMessage key={index} message={msg} isStreaming={false} isCopied={false} onCopy={() => {}} />
             ))
           )}
           <div ref={messagesEndRef} style={{ height: "20px" }} />
         </div>
       </div>
-
-      <Composer
-        value={inputValue}
-        onChange={onInputChange}
-        onSend={onSend}
-        isGenerating={isGenerating}
-        onStop={onStop}
-        attachedFiles={attachedFiles}
-        onAttachFile={onAttachFile}
-        onRemoveFile={onRemoveFile}
-        textareaRef={textareaRef}
-      />
     </main>
   );
 }
