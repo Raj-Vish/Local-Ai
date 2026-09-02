@@ -193,3 +193,55 @@ class ExpenseSummary(BaseModel):
     by_category: list[CategoryTotal]
     period_start: date | None
     period_end: date | None
+
+
+# --- reports -----------------------------------------------------------------
+
+class ReportGenerate(BaseModel):
+    report_name: str = Field(min_length=1, max_length=180, examples=["September trip"])
+    period_start: date
+    period_end: date
+
+    @field_validator("report_name")
+    @classmethod
+    def tidy_name(cls, v: str) -> str:
+        return " ".join(v.split())
+
+    @model_validator(mode="after")
+    def sensible_period(self):
+        if self.period_end < self.period_start:
+            raise ValueError("The end date cannot be before the start date.")
+        return self
+
+
+class ReportItemOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    report_item_id: int
+    expense_id: int
+    # The amount as it was when the report was made, not as it is now.
+    amount_at_generation: Amount
+    remarks: str | None
+
+
+class ReportOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    report_id: int
+    report_name: str
+    period_start: date
+    period_end: date
+    total_amount: Amount
+    currency: str
+    status: str
+    generated_at: datetime | None
+    item_count: int = 0
+
+
+class ReportDetail(ReportOut):
+    items: list[ReportItemOut] = []
+
+
+class ReportList(BaseModel):
+    items: list[ReportOut]
+    count: int

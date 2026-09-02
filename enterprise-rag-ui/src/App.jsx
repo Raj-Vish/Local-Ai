@@ -6,6 +6,7 @@ import ChatView from "./components/ChatView";
 import SettingsModal from "./components/SettingsModal";
 import DocumentsPage from "./pages/DocumentsPage";
 import ExpensesPage from "./pages/ExpensesPage";
+import ReportsPage from "./pages/ReportsPage";
 import SessionLoader from "./components/SessionLoader";
 import { useTheme } from "./hooks/useTheme";
 import { useChatSession } from "./hooks/useChatSession";
@@ -136,6 +137,11 @@ export default function App() {
         />
       ) : activeView === "expenses" ? (
         <ExpensesPage
+          isSidebarOpen={isSidebarOpen}
+          onOpenSidebar={() => setIsSidebarOpen(true)}
+        />
+      ) : activeView === "reports" ? (
+        <ReportsPage
           isSidebarOpen={isSidebarOpen}
           onOpenSidebar={() => setIsSidebarOpen(true)}
         />

@@ -63,3 +63,5 @@
   .field-label.wide { grid-column: span 1; }
   .push-right { margin-left: 0; }
 }
+
+.form-hint { font-size: 12px; color: var(--text-secondary); margin: 10px 0 0; }

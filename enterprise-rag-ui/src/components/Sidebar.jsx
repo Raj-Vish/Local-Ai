@@ -1,4 +1,4 @@
-import { User, Settings, LogOut, Plus, MessageSquare, PanelLeftClose, FolderOpen, Wallet } from "lucide-react";
+import { User, Settings, LogOut, Plus, MessageSquare, PanelLeftClose, FolderOpen, Wallet, FileSpreadsheet } from "lucide-react";
 import "../styles/sidebar.css";
 
 function HistoryList({ topics, activeChat, keyPrefix, withIcon, onSelect }) {
@@ -23,7 +23,8 @@ function HistoryList({ topics, activeChat, keyPrefix, withIcon, onSelect }) {
 const NAV = [
   { view: "chat", label: "Chat", Icon: MessageSquare },
   { view: "documents", label: "Documents", Icon: FolderOpen },
-  { view: "expenses", label: "Expenses", Icon: Wallet }
+  { view: "expenses", label: "Expenses", Icon: Wallet },
+  { view: "reports", label: "Reports", Icon: FileSpreadsheet }
 ];
 
 export default function Sidebar({
