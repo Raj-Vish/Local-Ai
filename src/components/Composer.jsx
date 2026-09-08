@@ -31,7 +31,9 @@ export default function Composer({
   const handleFileSelect = (e, type) => {
     const file = e.target.files[0];
     if (file) {
-      onAttachFile({ name: file.name, type });
+      // We must pass the actual File object, not just its name, so FormData can send the bytes!
+      file.customType = type;
+      onAttachFile(file);
       setIsUploadOpen(false);
     }
     e.target.value = null;
@@ -44,7 +46,7 @@ export default function Composer({
           <div className="staged-files">
             {attachedFiles.map((f, i) => (
               <div key={i} className="staged-badge">
-                {f.type === "photo" ? <ImageIcon size={12} /> : <FileText size={12} />}
+                {f.customType === "photo" ? <ImageIcon size={12} /> : <FileText size={12} />}
                 <span>{f.name}</span>
                 <X size={12} className="remove-file" onClick={() => onRemoveFile(i)} />
               </div>

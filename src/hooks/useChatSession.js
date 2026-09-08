@@ -10,17 +10,28 @@ import { useAutoGrow } from "./useAutoGrow";
 const THINKING_MS = 450; // pause before the first token
 const TOKEN_MS = 25;     // gap between tokens
 
-// Owns one conversation and the thread list around it: the messages, the fake
-// token stream, staged attachments and the sidebar history.
+// Helper to load persistent data
+const loadStored = (key, fallback) => {
+  const saved = localStorage.getItem(key);
+  return saved ? JSON.parse(saved) : fallback;
+};
+
+// Owns one conversation and the thread list around it.
 export function useChatSession() {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState(() => loadStored("ai_messages", []));
   const [inputValue, setInputValue] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState([]);
 
-  const [recentChats, setRecentChats] = useState([]);
-  const [chatHistory, setChatHistory] = useState(INITIAL_CHAT_HISTORY);
-  const [activeChat, setActiveChat] = useState(null);
+  const [recentChats, setRecentChats] = useState(() => loadStored("ai_recentChats", []));
+  const [chatHistory, setChatHistory] = useState(() => loadStored("ai_chatHistory", INITIAL_CHAT_HISTORY));
+  const [activeChat, setActiveChat] = useState(() => loadStored("ai_activeChat", null));
+
+  // Save state changes to localStorage
+  useEffect(() => { localStorage.setItem("ai_messages", JSON.stringify(messages)); }, [messages]);
+  useEffect(() => { localStorage.setItem("ai_recentChats", JSON.stringify(recentChats)); }, [recentChats]);
+  useEffect(() => { localStorage.setItem("ai_chatHistory", JSON.stringify(chatHistory)); }, [chatHistory]);
+  useEffect(() => { localStorage.setItem("ai_activeChat", JSON.stringify(activeChat)); }, [activeChat]);
 
   const messagesEndRef = useRef(null);
   const streamRef = useRef(null);
@@ -72,13 +83,12 @@ export function useChatSession() {
     startNewChat();
   };
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!inputValue.trim() || isGenerating) return;
 
     const userText = inputValue;
     setInputValue("");
 
-    // The first message in a thread becomes its title in Recent Chats.
     if (messages.length === 0) {
       setRecentChats((prev) => [userText, ...prev]);
       setActiveChat(userText);
@@ -88,36 +98,68 @@ export function useChatSession() {
     setAttachedFiles([]);
     setIsGenerating(true);
 
-    const tokens = buildMockReply(userText).match(/\S+|\s+/g) || [];
     setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
-    let i = 0;
-    clearTimers();
+    try {
+      // Connect to our FastAPI Python Backend and send FILES!
+      const formData = new FormData();
+      formData.append("message", userText);
+      formData.append("user_role", "Employee");
+      
+      // If the user attached files, append them to the request
+      attachedFiles.forEach(file => {
+        formData.append("files", file);
+      });
 
-    // Hold before the first token so the thinking indicator is visible. A real
-    // backend supplies this latency on its own; the delay goes away with it.
-    streamRef.current = setTimeout(() => {
-      streamRef.current = setInterval(() => {
-        if (i < tokens.length) {
-          const nextToken = tokens[i];
-          setMessages((prev) => {
-            const updated = [...prev];
-            const lastIndex = updated.length - 1;
-            // Clone the last message before editing it; mutating in place makes
-            // React Strict Mode replay the append and double every word.
-            updated[lastIndex] = {
-              ...updated[lastIndex],
-              content: updated[lastIndex].content + nextToken
-            };
-            return updated;
-          });
-          i++;
-        } else {
-          clearTimers();
-          setIsGenerating(false);
-        }
-      }, TOKEN_MS);
-    }, THINKING_MS);
+      const response = await fetch("http://localhost:8000/chat", {
+        method: "POST",
+        // Notice we do NOT set "Content-Type: application/json" anymore. 
+        // The browser automatically sets it to "multipart/form-data" for us.
+        body: formData
+      });
+      
+      const data = await response.json();
+      const aiReply = data.reply || "Error: No reply from AI.";
+      
+      // Break the real AI response into words for the streaming effect
+      const tokens = aiReply.match(/\S+|\s+/g) || [];
+
+      let i = 0;
+      clearTimers();
+
+      streamRef.current = setTimeout(() => {
+        streamRef.current = setInterval(() => {
+          if (i < tokens.length) {
+            const nextToken = tokens[i];
+            setMessages((prev) => {
+              const updated = [...prev];
+              const lastIndex = updated.length - 1;
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                content: updated[lastIndex].content + nextToken
+              };
+              return updated;
+            });
+            i++;
+          } else {
+            clearTimers();
+            setIsGenerating(false);
+          }
+        }, TOKEN_MS);
+      }, THINKING_MS);
+
+    } catch (error) {
+      console.error("Backend connection failed:", error);
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant", 
+          content: "Connection Error: Please ensure your FastAPI server (uvicorn server:app --reload) is running on port 8000."
+        };
+        return updated;
+      });
+      setIsGenerating(false);
+    }
   };
 
   const attachFile = (file) => setAttachedFiles((prev) => [...prev, file]);

@@ -1,16 +1,56 @@
-# React + Vite
+# Local Enterprise AI Assistant (Expense RAG)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project is a Secure, Local AI-Assisted Expense Management System. It allows users to upload financial documents (PDFs/Receipts) and interact with an AI to summarize, extract, and query expense data. The entire system runs **100% offline** on local hardware using Small Language Models (SLMs).
 
-Currently, two official plugins are available:
+## Architecture
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The system is divided into two main components:
+1. **Frontend (React/Vite)**: A modern, ChatGPT-like web interface for users to upload documents and chat.
+2. **Backend (Python/FastAPI)**: The bridging server that processes PDFs, manages conversation memory, and communicates with the local AI.
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 1. The Backend (Python)
+**File:** `server.py`
 
-## Expanding the ESLint configuration
+### What it does:
+- Acts as the middleman between the React UI and the local AI (Ollama).
+- Listens on `http://localhost:8000/chat`.
+- **File Uploads**: Uses `PyMuPDF` (`fitz`) to extract text directly from uploaded PDFs in memory.
+- **Persistent Memory**: Saves the conversation history to `backend_memory.json` so the AI retains context even if the server restarts.
+- **AI Integration**: Sends the extracted text and user prompt to `qwen2.5:3b` via Ollama with `temperature: 0.0` to ensure factual, non-hallucinated answers.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### How to run it:
+1. Open a terminal in the project folder.
+2. Ensure Ollama is running in the background.
+3. Start the FastAPI server:
+   ```bash
+   uvicorn server:app --reload
+   ```
+
+---
+
+## 2. The Frontend (React)
+**Folder:** `src/`
+
+### What it does:
+- Provides a beautiful, dark-mode workspace (`ChatView.jsx`, `Sidebar.jsx`).
+- **File Attachments**: Users can attach documents using the `+` button (`Composer.jsx`).
+- **Persistent Memory**: Uses `localStorage` inside `useChatSession.js` so that if the user refreshes the browser, their chats are not lost.
+- **Full-Stack Connection**: Connects to the backend via a `fetch()` request sending a `FormData` object containing the user's message and the attached PDF binary.
+
+### How to run it:
+1. Open a second terminal in the project folder.
+2. Install dependencies (only needed once): `npm install`
+3. Start the Vite development server:
+   ```bash
+   npm run dev
+   ```
+4. Open the provided `localhost` link in your browser.
+
+---
+
+## Previous Prototype Scripts (Reference)
+Before building the full-stack app, we built prototypes to test the individual pieces:
+- **`read_pdf_ai.py`**: A pure terminal script to test if `PyMuPDF` could extract text from a dummy PDF and pass it to Ollama.
+- **`expense_rag.py`**: A prototype script to test Vector Database chunking using ChromaDB (this logic will be integrated into `server.py` in the next phase).
