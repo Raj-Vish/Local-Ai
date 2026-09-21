@@ -11,6 +11,9 @@ __pycache__/
 
 # --- User data ---
 storage/
+# The vector index: generated from the documents, rebuildable by re-indexing,
+# and a second copy of everyone's document contents. Never commit it.
+chroma/
 
 # --- Editors ---
 .vs/

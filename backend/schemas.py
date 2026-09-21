@@ -75,12 +75,59 @@ class DocumentOut(BaseModel):
     file_size: int
     status: str
     ocr_used: bool
+    # Why extraction failed, in words the uploader can act on. None unless
+    # status is "failed".
+    error_message: str | None = None
     uploaded_at: datetime
 
 
 class DocumentList(BaseModel):
     items: list[DocumentOut]
     count: int
+
+
+class DocumentText(BaseModel):
+    """What was read out of a document.
+
+    Deliberately separate from DocumentOut: extracted text can run to tens of
+    thousands of characters, and the document list should not carry that.
+    """
+    document_id: int
+    original_filename: str
+    status: str
+    ocr_used: bool
+    error_message: str | None
+    char_count: int
+    text: str
+
+
+class ProposedFieldOut(BaseModel):
+    """One suggested value, with the line of the document it came from.
+
+    The evidence is not decoration. A person confirming a figure should be
+    able to check it against the receipt without opening the receipt.
+    """
+    value: str | None
+    confidence: float
+    line_no: int | None
+    evidence: str | None
+    note: str | None
+
+
+class ExpenseProposalOut(BaseModel):
+    """A suggestion, not a record. Nothing is stored until a person confirms.
+
+    Returned by a GET-shaped, read-only endpoint: proposing changes nothing
+    in the database, so abandoning a proposal leaves no trace.
+    """
+    document_id: int
+    original_filename: str
+    amount: ProposedFieldOut
+    expense_date: ProposedFieldOut
+    vendor: ProposedFieldOut
+    category: ProposedFieldOut
+    # Field names that could not be read; the form asks for these by hand.
+    unresolved: list[str]
 
 
 # --- expenses ---------------------------------------------------------------
@@ -193,6 +240,92 @@ class ExpenseSummary(BaseModel):
     by_category: list[CategoryTotal]
     period_start: date | None
     period_end: date | None
+
+
+# --- retrieval (RAG) ---------------------------------------------------------
+
+class SearchQuery(BaseModel):
+    """What the caller may ask for.
+
+    Note what is NOT here: there is no user_id and no document scope. The
+    backend takes the user from the authenticated token, so no request shape
+    can widen a search beyond its own documents.
+    """
+    query: str = Field(min_length=1, max_length=500, examples=["Mumbai hotel receipt"])
+    top_k: int | None = Field(default=None, ge=1, le=50)
+
+    @field_validator("query")
+    @classmethod
+    def tidy_query(cls, v: str) -> str:
+        cleaned = " ".join(v.split())
+        if not cleaned:
+            raise ValueError("Enter something to search for.")
+        return cleaned
+
+
+class SearchHit(BaseModel):
+    document_id: int
+    chunk_id: str
+    chunk_index: int
+    filename: str
+    text: str
+    # 1.0 is identical, 0.0 is unrelated. Derived from cosine distance so a
+    # larger number means a closer match, which is what a reader expects.
+    score: float | None
+    start_line: int
+    end_line: int
+
+
+class SearchResults(BaseModel):
+    query: str
+    count: int
+    top_k: int
+    results: list[SearchHit]
+    # True when the index holds nothing for this user yet, so the frontend can
+    # say "nothing indexed" rather than "no matches", which mean different things.
+    index_empty: bool = False
+
+
+class AskQuery(BaseModel):
+    question: str = Field(min_length=1, max_length=500,
+                          examples=["Which hotel did I stay at in Mumbai?"])
+    top_k: int | None = Field(default=None, ge=1, le=50)
+
+    @field_validator("question")
+    @classmethod
+    def tidy_question(cls, v: str) -> str:
+        cleaned = " ".join(v.split())
+        if not cleaned:
+            raise ValueError("Enter a question.")
+        return cleaned
+
+
+class AskAnswer(BaseModel):
+    """A phrased answer, plus everything it was based on.
+
+    `facts` are figures computed by MySQL. `sources` are the document extracts
+    retrieved. Both are returned so the answer can always be checked against
+    what produced it -- and so the frontend can show retrieval working even
+    when no language service is connected.
+    """
+    question: str
+    answer: str | None
+    answered_by_model: bool
+    # Why there is no answer, when there is none.
+    unavailable_reason: str | None = None
+    facts: list[str]
+    sources: list[SearchHit]
+
+
+class IndexStatusOut(BaseModel):
+    """What this user has searchable, and what still needs doing."""
+    documents_total: int
+    documents_indexed: int
+    documents_failed: int
+    documents_pending: int
+    chunks_indexed: int
+    embed_model: str
+    search_available: bool
 
 
 # --- reports -----------------------------------------------------------------

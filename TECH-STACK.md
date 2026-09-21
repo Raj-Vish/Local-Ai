@@ -80,6 +80,59 @@ Reads a file's real type from its first bytes, so a text file renamed to
 (`libmagic`) installed separately. `filetype` is pure Python, so it installs
 anywhere — including a college server where you may not have admin rights.
 
+### pdfplumber
+
+Reads the text layer out of a digital PDF — the text is already in the file,
+it just needs pulling out in reading order.
+
+**It cannot read a photograph.** A scanned or photographed receipt is pixels,
+so pdfplumber returns almost nothing. That is the signal the code uses to fall
+back to OCR.
+
+### pytesseract and Pillow
+
+`pytesseract` is a thin wrapper that runs the `tesseract` command and hands
+back the text. Pillow opens the image and converts it to greyscale first,
+which Tesseract reads more reliably and with less memory.
+
+**Tesseract itself is a system package, not a Python one** — `pip install
+pytesseract` does not install the engine. Without `apt install tesseract-ocr`
+the backend still starts and digital PDFs still work; only OCR is unavailable,
+and it says so instead of failing silently.
+
+### poppler-utils (pdftoppm)
+
+Turns a PDF page into a PNG so Tesseract can read it. Only used when a PDF has
+no text layer.
+
+### chromadb
+
+The local vector database. Stores one embedding per chunk, each tagged with
+the user who owns it, and persists to `rag/chroma/` so restarting the backend
+does not lose the index.
+
+Local in the real sense: no account, no API key, no network call.
+
+### onnxruntime, and the embedding model
+
+Embeddings come from **all-MiniLM-L6-v2** run through ONNX Runtime on the
+CPU — 384 dimensions, about 80 MB of weights, a few hundred megabytes of RAM
+while running.
+
+**Chosen over `sentence-transformers`**, which almost every RAG tutorial
+recommends. It pulls in PyTorch: 554 MB for `torch` plus 248 MB for `triton`
+before a single model is downloaded, for the same MiniLM weights. On a laptop
+with around 1.5 GB of free memory that is the wrong trade. The whole ONNX
+path is 94 MB of wheels.
+
+The model is named in `.env` as `EMBED_MODEL` and reached only through
+`services/embeddings.py`, so swapping it means changing that line and
+re-indexing — never editing code in several places.
+
+**The embedding model is not the chat model.** It turns text into numbers for
+comparison; it cannot write a sentence. Qwen writes sentences and is a
+separate thing entirely, running on a different machine.
+
 ### python-multipart
 
 Required for file uploads. FastAPI fails at startup without it and the error
@@ -136,6 +189,8 @@ Tested on Ubuntu 24.04. Roughly 15 minutes, mostly downloading.
 ```bash
 sudo apt update
 sudo apt install -y python3-pip python3-venv mysql-server
+# For reading documents (Stage 1): OCR engine and the PDF rasteriser.
+sudo apt install -y tesseract-ocr poppler-utils
 ```
 
 Node.js 20 or newer, from https://nodejs.org (take the LTS version).
@@ -250,6 +305,11 @@ cd backend && ./venv/bin/python seed_demo.py
 | `npm run lint` | Check the frontend code |
 | `./venv/bin/python seed_demo.py` | Reset to demo data |
 | `./venv/bin/python test_isolation.py` | Run the data separation test |
+| `./venv/bin/python test_field_extraction.py` | Run the field proposer's checks (no server needed) |
+| `./venv/bin/python test_chunking.py` | Run the chunker's checks (no server needed) |
+| `./venv/bin/python test_rag.py` | Run retrieval and vector-isolation checks (server needed) |
+| `./venv/bin/python backfill_extraction.py` | List documents with no extracted text |
+| `./venv/bin/python backfill_extraction.py --apply` | Read those documents now |
 
 ---
 
@@ -269,6 +329,13 @@ change Vite's, or CORS will block every request.
 
 **`RuntimeError: Form data requires python-multipart`** — install it and
 restart.
+
+**A document's status stays "Unreadable" with "Tesseract OCR is not
+installed"** — run `sudo apt install tesseract-ocr`, then use the retry button
+on the row, or `./venv/bin/python backfill_extraction.py --apply --retry-failed`.
+
+**A document's status stays "Queued"** — the background task never ran, which
+usually means the backend was restarted mid-upload. Retry that row.
 
 **`Access denied for user 'expense_app'`** — the password in `.env` does not
 match the one used in `CREATE USER`.

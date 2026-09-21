@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
 import models  # noqa: F401  -- imported so Base knows about every table
-from api import auth, documents, expenses, reports, users
+from api import auth, documents, expenses, rag, reports, users
 from config import settings
 from database import Base, engine
 
@@ -31,7 +31,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Expense Management API",
     description="AI-Assisted Enterprise Expense Management System",
-    version="0.6.0",
+    version="0.7.0",
     lifespan=lifespan,
 )
 
@@ -52,6 +52,7 @@ app.include_router(users.router)
 app.include_router(documents.router)
 app.include_router(expenses.router)
 app.include_router(reports.router)
+app.include_router(rag.router)
 
 
 @app.get("/health", tags=["system"])

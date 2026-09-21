@@ -10,10 +10,13 @@ Deliberately written against the live HTTP API rather than the database, so
 it tests what an attacker can actually reach -- not what the code intends.
 """
 import sys
+import time
 from datetime import date
 from decimal import Decimal
 
 import requests
+
+from fixtures import build_receipt_pdf
 
 BASE = "http://127.0.0.1:8000"
 
@@ -36,12 +39,26 @@ def register_and_login(who):
 
 
 def seed(headers, vendor):
-    """Give an employee one document, one expense and one report."""
-    pdf = b"%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n" + vendor.encode()
+    """Give an employee one document, one expense and one report.
+
+    The document is a real, readable PDF so extraction reaches "ready". A
+    placeholder that fails to extract would leave /text and /propose-expense
+    short-circuiting on status before the ownership check was ever reached --
+    the isolation checks would pass without testing anything.
+    """
+    pdf = build_receipt_pdf([vendor, "TAX INVOICE", "Date: 01/08/2026", "TOTAL 1000.00"])
     doc = requests.post(
         f"{BASE}/documents/upload", headers=headers,
         files={"file": (f"{vendor}.pdf", pdf, "application/pdf")},
     ).json()
+
+    # Extraction runs in the background; wait for it so the checks below hit
+    # the real code path rather than a "not ready yet" short circuit.
+    for _ in range(20):
+        state = requests.get(f"{BASE}/documents/{doc['document_id']}", headers=headers).json()
+        if state["status"] in ("ready", "failed"):
+            break
+        time.sleep(0.25)
 
     exp = requests.post(
         f"{BASE}/expenses", headers=headers,
@@ -88,12 +105,22 @@ def main():
     hb = register_and_login(B)
     doc_a, exp_a, rep_a = seed(ha, "AlphaVendor")
     seed(hb, "BetaVendor")
-    print(f"  set up: A has document {doc_a}, expense {exp_a}, report {rep_a}\n")
+    state = requests.get(f"{BASE}/documents/{doc_a}", headers=ha).json()["status"]
+    print(f"  set up: A has document {doc_a} ({state}), expense {exp_a}, report {rep_a}")
+    check("A's document really was readable", state == "ready", f"-> {state}")
+    print()
 
     print("Employee B tries to reach Employee A's data")
     attempts = [
         ("read A's document",     "GET",    f"/documents/{doc_a}"),
         ("download A's file",     "GET",    f"/documents/{doc_a}/file"),
+        # Extracted text is the document's contents in another form, so it
+        # carries exactly the same isolation rule as the file itself.
+        ("read A's extracted text", "GET",  f"/documents/{doc_a}/text"),
+        ("re-extract A's document", "POST", f"/documents/{doc_a}/extract"),
+        # A proposal is built from A's receipt text, so it leaks the same
+        # contents by another route.
+        ("propose from A's document", "GET", f"/documents/{doc_a}/propose-expense"),
         ("delete A's document",   "DELETE", f"/documents/{doc_a}"),
         ("read A's expense",      "GET",    f"/expenses/{exp_a}"),
         ("edit A's expense",      "PATCH",  f"/expenses/{exp_a}"),
@@ -108,6 +135,33 @@ def main():
         # 404 rather than 403: "forbidden" would confirm the row exists.
         check(label, code == 404, f"-> HTTP {code}")
 
+    # A document with no extracted text never reaches resolve_for_read, so the
+    # route's own ownership check is the ONLY thing protecting it. Without
+    # this case the storage-containment layer silently covers for a missing
+    # check and the suite cannot tell the difference.
+    print("\nA document with no extracted text (ownership check standing alone)")
+    unreadable = b"%PDF-1.4\nnot a real pdf\n%%EOF\n"
+    broken = requests.post(
+        f"{BASE}/documents/upload", headers=ha,
+        files={"file": ("unreadable.pdf", unreadable, "application/pdf")},
+    )
+    if broken.status_code == 201:
+        broken_id = broken.json()["document_id"]
+        for _ in range(20):
+            st = requests.get(f"{BASE}/documents/{broken_id}", headers=ha).json()["status"]
+            if st in ("ready", "failed"):
+                break
+            time.sleep(0.25)
+        r = requests.get(f"{BASE}/documents/{broken_id}/text", headers=hb)
+        check("B cannot read text of A's unreadable document", r.status_code == 404,
+              f"-> HTTP {r.status_code}")
+        r = requests.get(f"{BASE}/documents/{broken_id}/propose-expense", headers=hb)
+        check("B cannot propose from A's unreadable document", r.status_code == 404,
+              f"-> HTTP {r.status_code}")
+        requests.delete(f"{BASE}/documents/{broken_id}", headers=ha)
+    else:
+        check("unreadable fixture uploaded", False, f"-> HTTP {broken.status_code}")
+
     print("\nListings show only your own rows")
     for label, path in [("documents", "/documents"), ("expenses", "/expenses"), ("reports", "/reports")]:
         items = requests.get(f"{BASE}{path}", headers=hb).json()["items"]
@@ -119,10 +173,31 @@ def main():
         code = requests.get(f"{BASE}{path}", headers=ha).status_code
         check(f"A's {label} still there", code == 200, f"-> HTTP {code}")
 
+    # Vectors are a second copy of every document's contents. A search that
+    # ignored ownership would answer questions about documents the asker
+    # cannot open -- the same leak by a different route.
+    print("\nSemantic search is scoped to the asker")
+    requests.post(f"{BASE}/documents/{doc_a}/index", headers=ha)
+    time.sleep(3)
+    for query in ("AlphaVendor", "hotel invoice total"):
+        res = requests.post(f"{BASE}/rag/search", headers=hb, json={"query": query})
+        hits = res.json().get("results", []) if res.status_code == 200 else []
+        check(f"B searching {query!r} gets none of A's documents",
+              all(h["document_id"] != doc_a for h in hits),
+              f"-> HTTP {res.status_code}, {len(hits)} own hit(s)")
+
     print("\nUnauthenticated access")
     for label, path in [("documents", "/documents"), ("expenses", "/expenses"), ("reports", "/reports"),
-                        ("a specific document", f"/documents/{doc_a}")]:
+                        ("a specific document", f"/documents/{doc_a}"),
+                        ("extracted text", f"/documents/{doc_a}/text"),
+                        ("an expense proposal", f"/documents/{doc_a}/propose-expense"),
+                        ("the index status", "/rag/status")]:
         code = requests.get(f"{BASE}{path}").status_code
+        check(f"no token on {label}", code in (401, 403), f"-> HTTP {code}")
+
+    for label, path, body in [("semantic search", "/rag/search", {"query": "hotel"}),
+                              ("ask", "/rag/ask", {"question": "hotel?"})]:
+        code = requests.post(f"{BASE}{path}", json=body).status_code
         check(f"no token on {label}", code in (401, 403), f"-> HTTP {code}")
 
     print("\nTotals are per user, not global")

@@ -14,6 +14,24 @@ export function uploadDocument(file) {
   return apiFetch("/documents/upload", { method: "POST", body: form });
 }
 
+// The text read out of a document. Kept off the list response because it can
+// run to tens of thousands of characters; fetched only when actually shown.
+export function getDocumentText(documentId, signal) {
+  return apiFetch(`/documents/${documentId}/text`, { signal });
+}
+
+// Ask the server to read this document again -- after OCR is installed, or
+// for a document uploaded before extraction existed.
+export function retryExtraction(documentId) {
+  return apiFetch(`/documents/${documentId}/extract`, { method: "POST" });
+}
+
+// Suggested expense fields read out of this document. Read-only: calling this
+// creates nothing, so a proposal the user abandons leaves no trace.
+export function proposeExpense(documentId, signal) {
+  return apiFetch(`/documents/${documentId}/propose-expense`, { signal });
+}
+
 export function deleteDocument(documentId) {
   return apiFetch(`/documents/${documentId}`, { method: "DELETE" });
 }

@@ -15,8 +15,9 @@ from pathlib import Path
 from config import settings
 from core.security import hash_password
 from database import Base, SessionLocal, engine
+from fixtures import build_receipt_pdf
 from models import Document, Expense, ExpenseReport, User
-from services import storage
+from services import document_pipeline, storage
 
 DEMO_PASSWORD = "demo12345678"
 
@@ -25,6 +26,18 @@ PEOPLE = [
         "employee_id": "EMP001",
         "full_name": "Raj Vishwakarma",
         "email": "raj@company.com",
+        # Mirrors the Hotel expense below, so the receipt and the claim agree.
+        "receipt": [
+            "TAJ RESIDENCY", "Colaba, Mumbai 400001", "GSTIN: 27AABCT1234M1Z5", "",
+            "TAX INVOICE", "Invoice No: TR/2026/09/4417", "Date: {{DATE}}",
+            "Guest: Raj Vishwakarma", "",
+            "Description              Qty      Amount",
+            "Room Charges (Deluxe)      2      4237.29",
+            "CGST 9%                            381.36",
+            "SGST 9%                            381.35", "",
+            "TOTAL                             5000.00",
+            "Payment Mode: Corporate Card",
+        ],
         "expenses": [
             (0,  "Hotel",     "Taj Residency",     "5000.00", "Client visit, Mumbai"),
             (1,  "Transport", "Ola Cabs",           "840.00", "Airport to hotel"),
@@ -39,6 +52,17 @@ PEOPLE = [
         "employee_id": "EMP002",
         "full_name": "Priya Sharma",
         "email": "priya@company.com",
+        "receipt": [
+            "LEMON TREE HOTEL", "Hinjewadi, Pune 411057", "GSTIN: 27AACCL9876P1Z2", "",
+            "TAX INVOICE", "Invoice No: LT/2026/09/2210", "Date: {{DATE}}",
+            "Guest: Priya Sharma", "",
+            "Description              Qty      Amount",
+            "Room Charges (Superior)    1      3559.32",
+            "CGST 9%                            320.34",
+            "SGST 9%                            320.34", "",
+            "TOTAL                             4200.00",
+            "Payment Mode: Corporate Card",
+        ],
         "expenses": [
             (1,  "Transport", "Uber",               "460.00", None),
             (2,  "Food",      "Social Offline",     "980.00", "Client coffee"),
@@ -65,6 +89,7 @@ def main():
     try:
         wipe(db)
         today = date.today()
+        document_ids = []
 
         for person in PEOPLE:
             user = User(
@@ -77,9 +102,19 @@ def main():
             db.flush()
 
             # One sample receipt, so the document list and the receipt
-            # dropdown are not empty during a demo.
-            pdf = (b"%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\n"
-                   b"trailer<</Root 1 0 R>>\n%%EOF\n")
+            # dropdown are not empty during a demo -- and so Stage 1 has
+            # something real to read.
+            # The receipt is dated to match the Hotel expense it supports, so
+            # a field proposal read from it agrees with the claim beside it.
+            hotel_days_ago = next(
+                (days for days, category, *_ in person["expenses"] if category == "Hotel"), 0
+            )
+            receipt_date = today - timedelta(days=hotel_days_ago)
+            lines = [
+                line.replace("{{DATE}}", f"{receipt_date:%d/%m/%Y}")
+                for line in person["receipt"]
+            ]
+            pdf = build_receipt_pdf(lines)
             stored, path = storage.save(user.user_id, pdf, ".pdf")
             document = Document(
                 user_id=user.user_id,
@@ -88,10 +123,14 @@ def main():
                 file_path=path,
                 mime_type="application/pdf",
                 file_size=len(pdf),
-                checksum_sha256=storage.checksum(pdf + person["employee_id"].encode()),
+                # The real hash of the real bytes. Each person's receipt names
+                # them, so the two differ naturally and the checksum stays a
+                # usable integrity check rather than a salted stand-in.
+                checksum_sha256=storage.checksum(pdf),
             )
             db.add(document)
             db.flush()
+            document_ids.append(document.document_id)
 
             for days_ago, category, vendor, amount, note in person["expenses"]:
                 db.add(Expense(
@@ -112,6 +151,13 @@ def main():
                   f"{len(person['expenses'])} expenses  total {total}")
 
         db.commit()
+
+        # Read each seeded receipt, so a fresh demo opens on "Text ready"
+        # rather than a row that has not been processed yet.
+        for document_id in document_ids:
+            document_pipeline.extract_document(document_id)
+        print(f"\n  {len(document_ids)} receipt(s) seeded and read into text.")
+
         print(f"\n  Sign in with any of the emails above and password: {DEMO_PASSWORD}")
         print("  Expenses span the last 8 days, so this month's view is populated.")
     finally:

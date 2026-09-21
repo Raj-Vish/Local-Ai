@@ -100,6 +100,28 @@ def save(user_id: int, contents: bytes, extension: str) -> tuple[str, str]:
     return stored_name, str(destination)
 
 
+def save_text(user_id: int, stored_filename: str, text: str) -> str:
+    """Write extracted text beside the original, under the same user root.
+
+    Kept as a file rather than a database column for two reasons: extracted
+    text can run to tens of thousands of characters, and every read of it
+    already passes through resolve_for_read(), so it inherits the same
+    containment check the original file gets.
+    """
+    name = f"{Path(stored_filename).stem}.txt"
+    destination = user_dir(user_id, "extracted") / name
+    destination.write_text(text, encoding="utf-8")
+    return str(destination)
+
+
+def read_text(file_path: str) -> str:
+    """Read back extracted text. Missing or unreadable returns empty."""
+    try:
+        return Path(file_path).read_text(encoding="utf-8")
+    except (FileNotFoundError, UnicodeDecodeError):
+        return ""
+
+
 def delete(file_path: str) -> bool:
     """Remove a file. Missing is not an error -- the goal is that it is gone."""
     try:

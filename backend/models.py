@@ -199,6 +199,52 @@ class ExpenseReport(Base):
         return f"<ExpenseReport {self.report_id} {self.report_name}>"
 
 
+class IndexStatus(str, Enum):
+    PENDING = "pending"
+    INDEXED = "indexed"
+    FAILED = "failed"
+
+
+class DocumentIndex(Base):
+    """Whether a document's text has been chunked, embedded and stored.
+
+    A separate table rather than extra columns on documents, for a practical
+    reason: create_all() creates missing tables but never alters existing
+    ones, so adding columns to `documents` would mean dropping a table that
+    holds real rows. A new table costs nothing and is created automatically.
+
+    The vectors themselves live in ChromaDB. This row is the record that they
+    exist, how many there are, and which model produced them -- so a change of
+    embedding model is visible as rows that need re-indexing.
+    """
+    __tablename__ = "document_index"
+
+    document_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("documents.document_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("users.user_id", ondelete="CASCADE"), index=True
+    )
+
+    status: Mapped[str] = mapped_column(String(20), default=IndexStatus.PENDING.value)
+    chunk_count: Mapped[int] = mapped_column(BigInteger, default=0)
+    # Recorded so vectors made by a different model can be spotted and redone.
+    embed_model: Mapped[str] = mapped_column(String(64), default="")
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    indexed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+    __table_args__ = (Index("ix_document_index_user_status", "user_id", "status"),)
+
+    def __repr__(self) -> str:
+        return f"<DocumentIndex d{self.document_id} {self.status} {self.chunk_count} chunks>"
+
+
 class ExpenseReportItem(Base):
     """Freezes which expenses went into which report.
 

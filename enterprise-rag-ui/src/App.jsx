@@ -149,8 +149,6 @@ export default function App() {
         <ChatView
           isSidebarOpen={isSidebarOpen}
           onOpenSidebar={() => setIsSidebarOpen(true)}
-          messages={chat.messages}
-          messagesEndRef={chat.messagesEndRef}
         />
       )}
 
